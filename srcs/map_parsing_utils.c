@@ -1,22 +1,69 @@
-static void flood_fill_mark(char **g, int x, int y, int *cnt)
-{
-    size_t w;
+#include "so_long.h"
 
-    if (y < 0 || x < 0)
-        return ;
-    if (!g[y])
-        return ;
-    w = ft_strlen(g[y]);
-    if (x >= (int)w || g[y][x] == '1' || g[y][x] == 'F')
-        return ;
-    if (g[y][x] == 'C')
-        cnt[0]++;
-    else if (g[y][x] == 'E')
-        cnt[1]++;
-    g[y][x] = 'F';
-    flood_fill_mark(g, x + 1, y, cnt);
-    flood_fill_mark(g, x - 1, y, cnt);
-    flood_fill_mark(g, x, y + 1, cnt);
-    flood_fill_mark(g, x, y - 1, cnt);
+void scan_map_elements(t_map *map);
+void count_map_element(t_map *map, char ch);
+int check_map_file(char *filename);
+
+void init_map_counters(t_map *map)
+{
+    map->p_count = 0;
+    map->c_count = 0;
+    map->e_count = 0;
+    map->invalid = 0;
 }
 
+void count_map_element(t_map *map, char ch)
+{
+    if (ch == 'P')
+        map->p_count++;
+    else if (ch == 'C')
+        map->c_count++;
+    else if (ch == 'E')
+        map->e_count++;
+    else if (ch != '0' && ch != '1')
+        map->invalid = 1;
+}
+
+void scan_map_elements(t_map *map)
+{
+    int y;
+    int x;
+
+    y = 0;
+    init_map_counters(map);
+    while (y < map->height)
+    {
+        x = 0;
+        while (x < map->width)
+        {
+            count_map_element(map, map->grid[y][x]);
+            x++;
+        }
+        y++;
+    }
+}
+
+
+
+/*
+    chack_map_file:
+    filename is passed as an argument
+    we compute the lenght of the name w strlen
+    check if it has at least 5 char: 1 char for the name + .ber
+    return 0 (error) if:
+        the name if shorter then 4 char (.ber),
+        the result of comparison of the name + len - 4 with .ber is not zero!
+    return 1 if the file extention is .ber
+*/
+
+int check_map_file(char *filename)
+{
+    int len;
+
+    len = ft_strlen(filename);
+    if (len < 5)
+        return (0);
+    if (ft_strncmp(filename + len - 4, ".ber", 4) != 0)
+        return 0;
+	return (1);
+}

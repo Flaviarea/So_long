@@ -1,47 +1,148 @@
 #include "so_long.h"
 
-void scan_map_elements(t_map *map);
-void count_map_element(t_map *map, char ch);
+static char	**copy_map_grid(char **grid, int height);
+static void	redraw_map(t_data *data);
+static int	check_path_result(t_path *path, t_map *map);
+static int	init_path_struct(t_path *path, t_map *map);
 int count_lines(int fd);
-int check_map_file(char *filename);
 
-void init_map_counters(t_map *map)
+static void flood_fill_mark(char **g, int x, int y, int *cnt)
 {
-    map->p_count = 0;
-    map->c_count = 0;
-    map->e_count = 0;
-    map->invalid = 0;
+    size_t w;
+
+    if (y < 0 || x < 0)
+        return ;
+    if (!g[y])
+        return ;
+    w = ft_strlen(g[y]);
+    if (x >= (int)w || g[y][x] == '1' || g[y][x] == 'F')
+        return ;
+    if (g[y][x] == 'C')
+        cnt[0]++;
+    else if (g[y][x] == 'E')
+        cnt[1]++;
+    g[y][x] = 'F';
+    flood_fill_mark(g, x + 1, y, cnt);
+    flood_fill_mark(g, x - 1, y, cnt);
+    flood_fill_mark(g, x, y + 1, cnt);
+    flood_fill_mark(g, x, y - 1, cnt);
 }
 
-void count_map_element(t_map *map, char ch)
+static char	**copy_map_grid(char **grid, int height)
 {
-    if (ch == 'P')
-        map->p_count++;
-    else if (ch == 'C')
-        map->c_count++;
-    else if (ch == 'E')
-        map->e_count++;
-    else if (ch != '0' && ch != '1')
-        map->invalid = 1;
+	char	**copy;
+	int		i;
+
+	copy = malloc(sizeof(char *) * (height + 1));
+	if (!copy)
+		return (NULL);
+	i = 0;
+	while (i < height)
+	{
+		copy[i] = ft_strdup(grid[i]);
+		if (!copy[i])
+		{
+			while (--i >= 0)
+			{
+				free(copy[i]);
+				copy[i] = NULL;
+			}
+			free(copy);
+			return (NULL);
+		}
+		i++;
+	}
+	copy[i] = NULL;
+	return (copy);
 }
 
-void scan_map_elements(t_map *map)
+static void	redraw_map(t_data *data)
 {
-    int y;
-    int x;
+	int	i;
+	int	j;
 
-    y = 0;
-    init_map_counters(map);
-    while (y < map->height)
-    {
-        x = 0;
-        while (x < map->width)
-        {
-            count_map_element(map, map->grid[y][x]);
-            x++;
-        }
-        y++;
-    }
+	i = 0;
+	while (i < data->map.height)
+	{
+		j = 0;
+		while (j < data->map.width)
+		{
+			render_tile(data, i, j);
+			j++;
+		}
+		i++;
+	}
+}
+
+static int	check_path_result(t_path *path, t_map *map)
+{
+	if (path->cnt[0] != map->c_count)
+		return (error_message("Not all collectibles reachable", 0));
+	if (path->cnt[1] < 1)
+		return (error_message("Exit not reachable", 0));
+	return (1);
+}
+
+static int	init_path_struct(t_path *path, t_map *map)
+{
+	int	y;
+	int	x;
+
+	path->cp = copy_map_grid(map->grid, map->height);
+	if (!path->cp)
+		return (0);
+	path->cnt[0] = 0;
+	path->cnt[1] = 0;
+	path->sx = -1;
+	path->sy = -1;
+	path->i = 0;
+	path->j = 0;
+
+	y = 0;
+	while (y < map->height)
+	{
+		x = 0;
+		while (x < map->width)
+		{
+			if (map->grid[y][x] == 'P')
+			{
+				path->sx = x;
+				path->sy = y;
+				return (1);
+			}
+			x++;
+		}
+		y++;
+	}
+	return (0); // player non trovato
+}
+
+
+static void	find_player_position(t_path *path, t_map *map)
+{
+	while (path->i < map->height)
+	{
+		path->j = 0;
+		while (path->j < map->width)
+		{
+			if (map->grid[path->i][path->j] == 'P')
+			{
+				path->sx = path->j;
+				path->sy = path->i;
+			}
+			path->j++;
+		}
+		path->i++;
+	}
+}
+
+static int	check_path_result(t_path *path, t_map *map)
+{
+	if (path->cnt[0] != map->c_count)
+		return (error_message("Not all collectibles reachable", 0));
+	if (path->cnt[1] < 1)
+		return (error_message("Exit not reachable", 0));
+	return (1);
 }
 
 /*
@@ -54,34 +155,12 @@ int count_lines(int fd)
     int count;
 
     count = 0;
+	line = get_next_line(fd);
     while((line != NULL))
     {
-        line = get_next_line(fd)
+        line = get_next_line(fd);
         free(line); // free the line after processing
         count++;
     }
     return count;
-}
-
-/*
-    chack_map_file:
-    filename is passed as an argument
-    we compute the lenght of the name w strlen
-    check if it has at least 5 char: 1 char for the name + .ber
-    return 0 (error) if:
-        the name if shorter then 4 char (.ber),
-        the result of comparison of the name + len - 4 with .ber is not zero!
-    return 1 if the file extention is .ber
-*/
-
-int check_map_file(char *filename)
-{
-    int len;
-
-    len = ft_strlen(filename);
-    if (len < 5)
-        return (0);
-    if (ft_strncmp(filename + len - 4, ".ber", 4) != 0)
-        return 0;
-	return (1);
 }

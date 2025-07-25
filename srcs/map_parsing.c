@@ -2,6 +2,7 @@
 
 int fill_grid(int fd, t_map *map, int line_count);
 int	check_map_elements(t_map *map);
+int check_map_path(t_map *map);
 
 /*
     init_map or load map
@@ -21,7 +22,7 @@ int init_map(char *file, t_map *map)
     fd = open(file, O_RDONLY);
     if (fd < 0)
         return error_message("Failed to open map file", -1);
-    lines = count_lines(fd)
+    lines = count_lines(fd);
     close(fd);
     if (lines == 0)
         return error_message("Map file is empty", 0);
@@ -31,11 +32,11 @@ int init_map(char *file, t_map *map)
     if (!fill_grid(fd, map, lines))
         return (0); // oppure return (free(map->grid), 0);
     close(fd);
-    if (!check_map_elements(map, lines))
+    if (!check_map_elements(map))
         return (free_map(map), error_message("Map validation failed", 0)); // return free(map)
-    if (!check_map_format(map))
+    if (!check_map_format(map, lines))
         return (free_map(map), error_message("Map format is invalid", 0)); // return free(map))
-    If (!check_map_path(map))
+    if (!check_map_path(map))
         return (free_map(map), error_message("Map path is invalid", 0));
     return 1; // success
 }
@@ -59,12 +60,12 @@ int fill_grid(int fd, t_map *map, int line_count)
         return (error_message("Failed to allocate memory for map grid", 0));
     line = get_next_line(fd);
     i = 0;
-    while ((line) && i < line_count)
+    while ((line = get_next_line(fd)) && i < line_count)
     {
         map->grid[i] = ft_strtrim(line, "\n"); // trim newline characters
         free(line);
         if (!map->grid[i])
-            return (free_map(map), error_message("Failed to load the map", 0))// ma ritornare free_map o zero con error_message è uguale?
+            return (free_map(map), error_message("Failed to load the map", 0)); // ma ritornare free_map o zero con error_message è uguale?
         //line = NULL; // free the line after copying
         i++;
         //line = get_next_line(fd); // read the next line
@@ -97,59 +98,40 @@ int	check_map_elements(t_map *map)
 	return (1);
 }
 
-int check_map_path(t_map *map)
+int	check_map_path(t_map *map)
 {
-    char  **cp;
-    int    cnt[2];
-    int    i, j, sx, sy;
+	t_path	path;
 
-    cp = copy_map_grid(map);
-    if (!cp)
-        return 0;
-    cnt[0] = 0;
-    cnt[1] = 0;
-    sx = -1;
-    for (i = 0; i < map->height; i++)
-        for (j = 0; j < map->width; j++)
-            if (map->grid[i][j] == 'P')
-            {
-                sx = j;
-                sy = i;
-            }
-    flood_fill_mark(cp, sx, sy, cnt);
-    free_map_grid(cp, map->height);
-    if (cnt[0] != map->c_count)
-        return error_message("Not all collectibles reachable", 0);
-    if (cnt[1] < 1)
-        return error_message("Exit not reachable", 0);
-    return 1;
-}
-
-static char	**copy_map(char **grid, int height)
-{
-	char	**copy;
-	int		i;
-
-	copy = malloc(sizeof(char *) * (height + 1));
-
-	if (!copy)
-		return (NULL);
-	i = 0;
-	while (i < height)
+	if (!init_path_struct(&path, map))
 	{
-		copy[i] = ft_strdup(grid[i]);
-		if (!copy[i])
-		{
-			while (--i >= 0)
-			{
-				free(copy[i]);
-				copy[i] = NULL;
-			}
-			free(copy);
-			return (NULL);
-		}
-		i++;
+		ft_printf("Errore: Player non trovato nella mappa\n");
+		return (0);
 	}
-	copy[i] = NULL;
-	return (copy);
+	flood_fill_mark(path.cp, path.sx, path.sy, path.cnt);
+	free(path.cp);
+	return (check_path_result(&path, map));
 }
+
+
+
+int check_map_format(t_map *map, int count)
+{
+    int i;
+
+    i = -1;
+    if (count < 3 || map->width < 3)
+        error_handler("Map is too small", map);
+    while (++i < count)
+        if ((int)ft_strlen(map->grid[i]) != map->width)
+            error_handler("Map is not rectangular", map);
+    i = -1;
+    while (++i < map->width)
+		if (map->grid[0][i] != '1' || map->grid[count - 1][i] != '1')
+			error_handler("Map borders are not valid", map);
+	i = -1;
+	while (++i < count)
+		if (map->grid[i][0] != '1' || map->grid[i][map->width - 1] != '1')
+			error_handler("Map borders are not valid", map);
+	return (1);
+}
+

@@ -1,26 +1,36 @@
+#include "so_long.h"
 
+/*
+height e width Devono essere assegnati dal contenuto di map.
+*/
 
 int main(int ac, char **av)
 {
     t_data data;
 
     if (ac != 2)
-        return error_message("Invalid argument. Please add a valid map path");
+        error_message("Invalid argument. Please add a valid map path", 1);
     if (!check_map_file(av[1]))
-        return error_message("Invalid map format or content");
-    if(!init_map(av[i], &data.map))
-        return 1;
+        error_message("Invalid map format or content", 1);
+    if(!init_map(av[1], &data.map))
+        error_message("Failed to initialize map", 1);
     data.ptr = mlx_init();
     if (!data.ptr)
-        return (free_map(&data.map), error_message("Failed to initialize MLX")); // free the map, where?
+    {
+        free_map(&data.map);
+        error_message("Failed to initialize MLX", 1);
+    }
     // qui marina fa il controllo su load map e ha uan funzione specifica
-    data.win = mlx_new_window(data.ptr, data.width * TILE, data.height * TILE, "So Long"); // data.height *tile?
+    data.win = mlx_new_window(data.ptr, data.map.width * TILE, data.map.height * TILE, "So Long"); // data.height *tile?
     if (!data.win)
-        return (cleanup(&data), error_message("Failed to create a new window")); // free the map, where? oppure return (free(data.mlx), 1)
-    load_images(&data);
-    mlx_key_hook(data.ptr, handle_input, &data);
-    mlk_hook(data.ptr, 17, exit_success, &data);
-    mlx_loop(data.mlx);
-    cleanup(&data);
+    {
+        free_map(&data.map);
+        error_message("Failed to create a new window", 1);
+    }
+    init_images(&data);
+    render_map(&data);
+    mlx_key_hook(data.win, keypress, &data);
+    mlx_hook(data.win, 17, 0, destroy_win, &data);
+    mlx_loop(data.ptr);
     return 0;
 }
