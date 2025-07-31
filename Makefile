@@ -1,63 +1,65 @@
 NAME = so_long
 
 CC = cc
-CFLAGS = -Wall -Wextra -Werror -g
+CFLAGS = -Wall -Wextra -Werror -g -Iinclude -Ilibft/include
 
 INCLUDES = -I/usr/include -Imlx
 
 LIBFT_DIR = ./libft
 LIBFT = $(LIBFT_DIR)/libft.a
 
-MLX_DIR = ./mlx
+MLX_DIR = ./minilibx-linux
 MLX = $(MLX_DIR)/libmlx.a
 
-MLXFLAGS = -L$(MLX_DIR) -lmlx_Linux -L$(LIBFT_DIR) -lft -lXext -lX11 -lm -lz
+MLXFLAGS = -L$(MLX_DIR) -lmlx -L$(LIBFT_DIR) -lft -lXext -lX11 -lm -lz
 
-REMOVE = rm -f
+REMOVE = rm -rf
 
 SRC_DIR = srcs
 
-SRC = main.c \
-	map_parsing.c \
-	utils.c \
-	load_image.c \
-	frees_n_errors.c \
-	game_loop.c \
+SRC = $(SRC_DIR)/main.c \
+      $(SRC_DIR)/map_parsing.c \
+      $(SRC_DIR)/map_parsing_utils.c \
+      $(SRC_DIR)/utils.c \
+      $(SRC_DIR)/init_images.c \
+      $(SRC_DIR)/frees_n_errors.c \
+      $(SRC_DIR)/game_logic.c
 
 OBJ = $(SRC:.c=.o)
 
-all: $(LIBFT) $(MLX_LIB) $(NAME)
-	@echo "Compilation successfully done!!"
+all: $(LIBFT) $(MLX) $(NAME)
+	@echo "Compilation successfully done"
 
 $(LIBFT):
 	@echo "Compiling libft..."
 	@make -C $(LIBFT_DIR)
 
+$(MLX):
+	@echo "Compiling mlx..."
+	@make -C $(MLX_DIR)
+
 $(NAME): $(OBJ) 
 	@echo "Compiling MiniLibX"
 	$(MAKE) -C $(MLX_DIR)
-	@echo "Compiling so_long...""
+	@echo "Compiling so_long..."
 	cc $(CFLAGS) -o $(NAME) $(OBJ) $(LIBFT) $(MLXFLAGS)
-	@echo "$so_long executable created successfully!"
+	@echo "$(NAME) executable created successfully"
 
 %.o: %.c
 	@echo "Compiling $<..."
 	cc $(CFLAGS) -I . -I $(LIBFT_DIR) -I$(MLX_DIR) -c $< -o $@
 
-$(MLX_LIB):
-	@echo "Compiling MiniLibX..."
-	$(MAKE) -C $(MLX_DIR)
 
 clean:
 	@echo "Cleaning object files..."
-	rm -f $(OBJ)
+	$(REMOVE) $(OBJ)
 	@make -C $(LIBFT_DIR) clean
-	@make -C $(MLX_DIR) clean
 
 fclean: clean	
 	@echo "Cleaning all..."
-	rm -f $(NAME)
+	$(REMOVE) $(NAME)
 	@make -C $(LIBFT_DIR) fclean
+	@make -C $(MLX_DIR) clean
 
 re: fclean all
 

@@ -1,11 +1,6 @@
 #ifndef SO_LONG_H
 # define SO_LONG_H
 
-#ifndef LIBFT_H
-# define LIBFT_H
-#endif
-
-
 # define TILE 32
 
 #define PATH_CAT "image/person.xpm"
@@ -18,12 +13,11 @@
 # include <X11/X.h>
 # include <X11/keysym.h>
 # include <stddef.h>
-#include <stdlib.h>
-#include "get_next_line.h"
-#include "ft_printf.h"
+# include <fcntl.h>
+# include <stdlib.h>
+# include "get_next_line.h"
+# include "ft_printf.h"
 # include "libft/include/libft.h"
-#include <fcntl.h>
-
 
 typedef struct s_player
 {

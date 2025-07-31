@@ -1,29 +1,5 @@
 #include "so_long.h"
 
-void scan_map_elements(t_map *map);
-void count_map_element(t_map *map, char ch);
-int check_map_file(char *filename);
-
-void init_map_counters(t_map *map)
-{
-    map->p_count = 0;
-    map->c_count = 0;
-    map->e_count = 0;
-    map->invalid = 0;
-}
-
-void count_map_element(t_map *map, char ch)
-{
-    if (ch == 'P')
-        map->p_count++;
-    else if (ch == 'C')
-        map->c_count++;
-    else if (ch == 'E')
-        map->e_count++;
-    else if (ch != '0' && ch != '1')
-        map->invalid = 1;
-}
-
 void scan_map_elements(t_map *map)
 {
     int y;
@@ -43,27 +19,22 @@ void scan_map_elements(t_map *map)
     }
 }
 
-
-
-/*
-    chack_map_file:
-    filename is passed as an argument
-    we compute the lenght of the name w strlen
-    check if it has at least 5 char: 1 char for the name + .ber
-    return 0 (error) if:
-        the name if shorter then 4 char (.ber),
-        the result of comparison of the name + len - 4 with .ber is not zero!
-    return 1 if the file extention is .ber
-*/
-
-int check_map_file(char *filename)
+void init_map_counters(t_map *map)
 {
-    int len;
+    map->p_count = 0;
+    map->c_count = 0;
+    map->e_count = 0;
+    map->invalid = 0;
+}
 
-    len = ft_strlen(filename);
-    if (len < 5)
-        return (0);
-    if (ft_strncmp(filename + len - 4, ".ber", 4) != 0)
-        return 0;
-	return (1);
+void count_map_element(t_map *map, char ch)
+{
+    if (ch == 'P')
+        map->p_count++;
+    else if (ch == 'C')
+        map->c_count++;
+    else if (ch == 'E')
+        map->e_count++;
+    else if (ch != '0' && ch != '1')
+        map->invalid = 1;
 }

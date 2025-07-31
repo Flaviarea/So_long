@@ -1,89 +1,6 @@
 #include "so_long.h"
 
-static char	**copy_map_grid(char **grid, int height);
-static void	redraw_map(t_data *data);
-static int	check_path_result(t_path *path, t_map *map);
-static int	init_path_struct(t_path *path, t_map *map);
-int count_lines(int fd);
-
-static void flood_fill_mark(char **g, int x, int y, int *cnt)
-{
-    size_t w;
-
-    if (y < 0 || x < 0)
-        return ;
-    if (!g[y])
-        return ;
-    w = ft_strlen(g[y]);
-    if (x >= (int)w || g[y][x] == '1' || g[y][x] == 'F')
-        return ;
-    if (g[y][x] == 'C')
-        cnt[0]++;
-    else if (g[y][x] == 'E')
-        cnt[1]++;
-    g[y][x] = 'F';
-    flood_fill_mark(g, x + 1, y, cnt);
-    flood_fill_mark(g, x - 1, y, cnt);
-    flood_fill_mark(g, x, y + 1, cnt);
-    flood_fill_mark(g, x, y - 1, cnt);
-}
-
-static char	**copy_map_grid(char **grid, int height)
-{
-	char	**copy;
-	int		i;
-
-	copy = malloc(sizeof(char *) * (height + 1));
-	if (!copy)
-		return (NULL);
-	i = 0;
-	while (i < height)
-	{
-		copy[i] = ft_strdup(grid[i]);
-		if (!copy[i])
-		{
-			while (--i >= 0)
-			{
-				free(copy[i]);
-				copy[i] = NULL;
-			}
-			free(copy);
-			return (NULL);
-		}
-		i++;
-	}
-	copy[i] = NULL;
-	return (copy);
-}
-
-static void	redraw_map(t_data *data)
-{
-	int	i;
-	int	j;
-
-	i = 0;
-	while (i < data->map.height)
-	{
-		j = 0;
-		while (j < data->map.width)
-		{
-			render_tile(data, i, j);
-			j++;
-		}
-		i++;
-	}
-}
-
-static int	check_path_result(t_path *path, t_map *map)
-{
-	if (path->cnt[0] != map->c_count)
-		return (error_message("Not all collectibles reachable", 0));
-	if (path->cnt[1] < 1)
-		return (error_message("Exit not reachable", 0));
-	return (1);
-}
-
-static int	init_path_struct(t_path *path, t_map *map)
+int	init_path_struct(t_path *path, t_map *map)
 {
 	int	y;
 	int	x;
@@ -117,8 +34,66 @@ static int	init_path_struct(t_path *path, t_map *map)
 	return (0); // player non trovato
 }
 
+char	**copy_map_grid(char **grid, int height)
+{
+	char	**copy;
+	int		i;
 
-static void	find_player_position(t_path *path, t_map *map)
+	copy = malloc(sizeof(char *) * (height + 1));
+	if (!copy)
+		return (NULL);
+	i = 0;
+	while (i < height)
+	{
+		copy[i] = ft_strdup(grid[i]);
+		if (!copy[i])
+		{
+			while (--i >= 0)
+			{
+				free(copy[i]);
+				copy[i] = NULL;
+			}
+			free(copy);
+			return (NULL);
+		}
+		i++;
+	}
+	copy[i] = NULL;
+	return (copy);
+}
+
+void flood_fill_mark(char **g, int x, int y, int *cnt)
+{
+    size_t w;
+
+    if (y < 0 || x < 0)
+        return ;
+    if (!g[y])
+        return ;
+    w = ft_strlen(g[y]);
+    if (x >= (int)w || g[y][x] == '1' || g[y][x] == 'F')
+        return ;
+    if (g[y][x] == 'C')
+        cnt[0]++;
+    else if (g[y][x] == 'E')
+        cnt[1]++;
+    g[y][x] = 'F';
+    flood_fill_mark(g, x + 1, y, cnt);
+    flood_fill_mark(g, x - 1, y, cnt);
+    flood_fill_mark(g, x, y + 1, cnt);
+    flood_fill_mark(g, x, y - 1, cnt);
+}
+
+int	check_path_result(t_path *path, t_map *map)
+{
+	if (path->cnt[0] != map->c_count)
+		return (error_message("Not all collectibles reachable", 0));
+	if (path->cnt[1] < 1)
+		return (error_message("Exit not reachable", 0));
+	return (1);
+}
+
+void	find_player_position(t_path *path, t_map *map)
 {
 	while (path->i < map->height)
 	{
@@ -135,19 +110,6 @@ static void	find_player_position(t_path *path, t_map *map)
 		path->i++;
 	}
 }
-
-static int	check_path_result(t_path *path, t_map *map)
-{
-	if (path->cnt[0] != map->c_count)
-		return (error_message("Not all collectibles reachable", 0));
-	if (path->cnt[1] < 1)
-		return (error_message("Exit not reachable", 0));
-	return (1);
-}
-
-/*
-    for get_next_line
-*/
 
 int count_lines(int fd)
 {

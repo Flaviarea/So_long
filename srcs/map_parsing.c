@@ -1,8 +1,30 @@
 #include "so_long.h"
 
-int fill_grid(int fd, t_map *map, int line_count);
-int	check_map_elements(t_map *map);
-int check_map_path(t_map *map);
+/*
+    chack_map_file:
+    filename is passed as an argument
+    we compute the lenght of the name w strlen
+    check if it has at least 5 char: 1 char for the name + .ber
+    return 0 (error) if:
+        the name if shorter then 4 char (.ber),
+        the result of comparison of the name + len - 4 with .ber is not zero!
+    return 1 if the file extention is .ber / if the name is valid
+*/
+
+int check_map_file(char *filename)
+{
+    int len;
+
+    len = ft_strlen(filename);
+    if (len < 5)
+        return (0);
+    if (ft_strncmp(filename + len - 4, ".ber", 4) != 0)
+    {
+        ft_printf("Invalid file extention\n");
+        return (0);
+    }
+    return (1);
+}
 
 /*
     init_map or load map
@@ -21,24 +43,31 @@ int init_map(char *file, t_map *map)
 
     fd = open(file, O_RDONLY);
     if (fd < 0)
-        return error_message("Failed to open map file", -1);
+        return error_message("init: Failed to open map file", -1);
     lines = count_lines(fd);
-    close(fd);
     if (lines == 0)
-        return error_message("Map file is empty", 0);
-    fd = open(file, O_RDONLY);
-    if (fd < 0)
-        return error_message("Cannot reopen file", 0);
+    {
+        close(fd);
+        return error_message("init: map file is empty", 0);
+    }
+    if (lseek(fd, 0, SEEK_SET) < 0)
+    {
+        close(fd);
+        return error_message("init: Failed to rewind file", 0);
+    }
     if (!fill_grid(fd, map, lines))
-        return (0); // oppure return (free(map->grid), 0);
+    {
+        close(fd);
+        return error_message("init: Failed to fill grid", 0);
+    }
     close(fd);
     if (!check_map_elements(map))
-        return (free_map(map), error_message("Map validation failed", 0)); // return free(map)
+        return (free_map(map), error_message("init: map elements invalid", 0)); // return free(map)
     if (!check_map_format(map, lines))
-        return (free_map(map), error_message("Map format is invalid", 0)); // return free(map))
+        return (free_map(map), error_message("init: map format is invalid", 0)); // return free(map))
     if (!check_map_path(map))
-        return (free_map(map), error_message("Map path is invalid", 0));
-    return 1; // success
+        return (free_map(map), error_message("init: map path is invalid", 0));
+    return (1);
 }
 
 /*
@@ -60,23 +89,25 @@ int fill_grid(int fd, t_map *map, int line_count)
         return (error_message("Failed to allocate memory for map grid", 0));
     line = get_next_line(fd);
     i = 0;
-    while ((line = get_next_line(fd)) && i < line_count)
+    while (line && i < line_count)
     {
-        map->grid[i] = ft_strtrim(line, "\n"); // trim newline characters
+        map->grid[i] = ft_strtrim(line, "\r\n"); // trim newline characters
         free(line);
         if (!map->grid[i])
             return (free_map(map), error_message("Failed to load the map", 0)); // ma ritornare free_map o zero con error_message è uguale?
         //line = NULL; // free the line after copying
         i++;
-        //line = get_next_line(fd); // read the next line
+        line = get_next_line(fd); // read the next line
     }
+    // if (i == 0)
+    //     return (free_map(map), error_message("init: map file is empty", 0));
     map->grid[i] = NULL;
     map->height = line_count;
     if (map->grid[0]) // uguale a scrivere map->width = (map->grid[0]) ? ft_strlen(map->grid[0]) : 0;
         map->width = ft_strlen(map->grid[0]);
     else
         map->width = 0; // null-terminate the grid
-    return 1; // success
+    return 1;
 }
 
 /* 
@@ -88,13 +119,13 @@ int	check_map_elements(t_map *map)
 {
 	scan_map_elements(map);
 	if (map->invalid)
-		return (error_message("Map contains invalid characters", 0));
+		return (error_message("elem: Map contains invalid characters", 0));
 	if (map->p_count != 1)
-		return (error_message("Map must contain exactly one 'P'", 0));
+		return (error_message("elem: Map must contain exactly one 'P'", 0));
 	if (map->c_count < 1)
-		return (error_message("Map must contain at least one 'C'", 0));
+		return (error_message("elem: Map must contain at least one 'C'", 0));
 	if (map->e_count < 1)
-		return (error_message("Map must contain at least one 'E'", 0));
+		return (error_message("elem: Map must contain at least one 'E'", 0));
 	return (1);
 }
 
@@ -111,8 +142,6 @@ int	check_map_path(t_map *map)
 	free(path.cp);
 	return (check_path_result(&path, map));
 }
-
-
 
 int check_map_format(t_map *map, int count)
 {
