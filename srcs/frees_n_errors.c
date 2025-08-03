@@ -37,14 +37,14 @@ void	free_images(t_data *data)
 {
 	if (data->grass.image)
 		mlx_destroy_image(data->ptr, data->grass.image);
-	if (data->apple.image)
-		mlx_destroy_image(data->ptr, data->apple.image);
-	if (data->tree.image)
-		mlx_destroy_image(data->ptr, data->tree.image);
+	if (data->donut.image)
+		mlx_destroy_image(data->ptr, data->donut.image);
+	if (data->exit.image)
+		mlx_destroy_image(data->ptr, data->exit.image);
 	if (data->person.image)
 		mlx_destroy_image(data->ptr, data->person.image);
-	if (data->house.image)
-		mlx_destroy_image(data->ptr, data->house.image);
+	if (data->tree.image)
+		mlx_destroy_image(data->ptr, data->tree.image);
 }
 
 int	destroy_win(t_data *data)

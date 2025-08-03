@@ -1,13 +1,13 @@
 #ifndef SO_LONG_H
 # define SO_LONG_H
 
-# define TILE 32
+# define TILE 64
 
 #define PATH_CAT "image/person.xpm"
-#define PATH_C "image/apple.xpm"
-#define PATH_W "image/tree.xpm"
+#define PATH_C "image/donut.xpm"
+#define PATH_W "image/exit.xpm"
 #define PATH_G "image/grass.xpm"
-#define PATH_H "image/house.xpm"
+#define PATH_H "image/tree.xpm"
 
 # include <mlx.h>
 # include <X11/X.h>
@@ -25,6 +25,7 @@ typedef struct s_player
     int moves;
     int x;
     int y;
+    char orig_pos;
 } t_player;
 
 typedef struct s_map
@@ -53,10 +54,10 @@ typedef struct s_data
     void    *win;
     t_map   map;    
     t_image person;
-    t_image house;
-    t_image grass;
-    t_image apple;
     t_image tree;
+    t_image grass;
+    t_image donut;
+    t_image exit;
 } t_data;
 
 typedef struct s_path
@@ -99,6 +100,7 @@ void	update_player_position(t_data *data, int x, int y);
 void	try_move(t_data *data, int dx, int dy);
 int	keypress(int keycode, t_data *data);
 int	is_valid_move(t_data *data, int x, int y);
+void    init_player(t_data *data);
 
 // frees_n_errors
 void	error_handler(const char *message, t_map *map);
@@ -111,6 +113,8 @@ int	error_message(const char *message, int exit_code);
 void	render_map(t_data *data);
 void	render_tile(t_data *data, int row, int col);
 void	init_images(t_data *data);
+int	find_player_in_map(t_path *path, t_map *map);
+void	init_path_values(t_path *path);
 
 
 #endif

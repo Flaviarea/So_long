@@ -2,18 +2,27 @@
 
 int	init_path_struct(t_path *path, t_map *map)
 {
-	int	y;
-	int	x;
-
 	path->cp = copy_map_grid(map->grid, map->height);
 	if (!path->cp)
 		return (0);
+	init_path_values(path);
+	return (find_player_in_map(path, map));
+}
+
+void	init_path_values(t_path *path)
+{
 	path->cnt[0] = 0;
 	path->cnt[1] = 0;
 	path->sx = -1;
 	path->sy = -1;
 	path->i = 0;
 	path->j = 0;
+}
+
+int	find_player_in_map(t_path *path, t_map *map)
+{
+	int	y;
+	int	x;
 
 	y = 0;
 	while (y < map->height)
@@ -31,7 +40,7 @@ int	init_path_struct(t_path *path, t_map *map)
 		}
 		y++;
 	}
-	return (0); // player non trovato
+	return (0);
 }
 
 char	**copy_map_grid(char **grid, int height)
@@ -62,26 +71,26 @@ char	**copy_map_grid(char **grid, int height)
 	return (copy);
 }
 
-void flood_fill_mark(char **g, int x, int y, int *cnt)
+void	flood_fill_mark(char **g, int x, int y, int *cnt)
 {
-    size_t w;
+	size_t	w;
 
-    if (y < 0 || x < 0)
-        return ;
-    if (!g[y])
-        return ;
-    w = ft_strlen(g[y]);
-    if (x >= (int)w || g[y][x] == '1' || g[y][x] == 'F')
-        return ;
-    if (g[y][x] == 'C')
-        cnt[0]++;
-    else if (g[y][x] == 'E')
-        cnt[1]++;
-    g[y][x] = 'F';
-    flood_fill_mark(g, x + 1, y, cnt);
-    flood_fill_mark(g, x - 1, y, cnt);
-    flood_fill_mark(g, x, y + 1, cnt);
-    flood_fill_mark(g, x, y - 1, cnt);
+	if (y < 0 || x < 0)
+		return ;
+	if (!g[y])
+		return ;
+	w = ft_strlen(g[y]);
+	if (x >= (int)w || g[y][x] == '1' || g[y][x] == 'F')
+		return ;
+	if (g[y][x] == 'C')
+		cnt[0]++;
+	else if (g[y][x] == 'E')
+		cnt[1]++;
+	g[y][x] = 'F';
+	flood_fill_mark(g, x + 1, y, cnt);
+	flood_fill_mark(g, x - 1, y, cnt);
+	flood_fill_mark(g, x, y + 1, cnt);
+	flood_fill_mark(g, x, y - 1, cnt);
 }
 
 int	check_path_result(t_path *path, t_map *map)
@@ -113,16 +122,29 @@ void	find_player_position(t_path *path, t_map *map)
 
 int count_lines(int fd)
 {
-    char *line;
-    int count;
-
+    char    *line;
+    int     count;
+    
     count = 0;
-	line = get_next_line(fd);
-    while((line != NULL))
+    line = get_next_line(fd);
+    while (line != NULL)
     {
-        line = get_next_line(fd);
-        free(line); // free the line after processing
+        // Controlla se la riga è vuota dopo trim
+        char *trimmed = ft_strtrim(line, "\r\n");
+        if (trimmed && ft_strlen(trimmed) == 0)
+        {
+            printf("DEBUG: Riga vuota rilevata in count_lines - USCENDO!\n");
+            free(trimmed);
+            free(line);
+            ft_printf("Error\nMap contains empty line\n");
+            exit(1);
+        }
+        if (trimmed)
+            free(trimmed);
+        
+        free(line);
         count++;
+        line = get_next_line(fd);
     }
-    return count;
+    return (count);
 }
