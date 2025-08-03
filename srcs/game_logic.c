@@ -31,7 +31,6 @@ void	try_move(t_data *data, int dx, int dy)
 	if (data->map.grid[new_y][new_x] == 'E'
 		&& data->map.player.collected == data->map.total_collect)
 	{
-		ft_printf("DEBUG: VICTORY CONDITION MET!\n");
 		update_player_position(data, new_x, new_y);
 		render_map(data);
 		ft_printf("\rYou won in %d moves!\n", data->map.player.moves);
@@ -59,9 +58,7 @@ void	init_player(t_data *data)
 				data->map.player.collected = 0;
 				data->map.player.moves = 0;
 				data->map.player.orig_pos = '0';
-				// ft_printf("DEBUG: Player initialized at (%d,%d), 
-                //     total_collect=%d\n", col, row, data->map.total_collect);
-				return;
+				return ;
 			}
 			col++;
 		}
@@ -107,4 +104,3 @@ void	update_player_position(t_data *data, int x, int y)
 	ft_printf("\rMoves: %d", data->map.player.moves);
 	render_tile(data, y, x);
 }
-

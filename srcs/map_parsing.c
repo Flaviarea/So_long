@@ -3,13 +3,13 @@
 /*
 **	check_map_file:
 **	filename is passed as an argument
-**	we compute the length of the name w ft_strlen**	check if it has at least 5 char: 1 char for the name + .ber
+**	we compute the length of the name w ft_strlen
+**	check if it has at least 5 char: 1 char for the name + .ber
 **	return 0 (error) if:
 **		the name if shorter then 4 char (.ber),
 **		the result of comparison of the name + len - 4 with .ber is not zero!
 **	return 1 if the file extension is .ber / if the name is valid
 */
-
 int	check_map_file(char *filename)
 {
 	int	len;
@@ -18,10 +18,7 @@ int	check_map_file(char *filename)
 	if (len < 5)
 		return (0);
 	if (ft_strncmp(filename + len - 4, ".ber", 4) != 0)
-	{
-		//ft_printf("Invalid file extension\n"); error_message 
 		return (0);
-	}
 	return (1);
 }
 
@@ -34,7 +31,6 @@ int	check_map_file(char *filename)
 **	check if the map has the mandatory path.
 **	return 1 on success, 0 on failure
 */
-
 int	init_map(char *file, t_map *map)
 {
 	int	fd;
@@ -46,6 +42,8 @@ int	init_map(char *file, t_map *map)
 	lines = count_lines(fd);
 	if (lines == 0)
 		return (close(fd), error_message("Map file is empty", 0));
+	if (lines == -1)
+		return (close(fd), error_message("Map contains empty line", 0));
 	if (lseek(fd, 0, SEEK_SET) < 0)
 		return (close(fd), error_message("Failed to rewind file", 0));
 	if (!fill_grid(fd, map, lines))
@@ -68,7 +66,6 @@ int	init_map(char *file, t_map *map)
 **	set the height and width of the map
 **	return 1 on success, 0 on failure
 */
-
 int	fill_grid(int fd, t_map *map, int line_count)
 {
 	char	*line;
@@ -76,7 +73,7 @@ int	fill_grid(int fd, t_map *map, int line_count)
 
 	map->grid = malloc(sizeof(char *) * (line_count + 1));
 	if (!map->grid)
-		return (error_message("Failed to allocate memory for map grid", 0));
+		return (error_message("Failed to allocate memory for map grid", 1));
 	line = get_next_line(fd);
 	i = 0;
 	while (line && i < line_count)
@@ -84,20 +81,28 @@ int	fill_grid(int fd, t_map *map, int line_count)
 		map->grid[i] = ft_strtrim(line, "\r\n");
 		free(line);
 		if (!map->grid[i])
-			return (free_map(map), error_message("Failed to load the map", 0));
+			return (free_map(map), error_message("Failed to load the map", 1));
 		i++;
 		line = get_next_line(fd);
 	}
 	map->grid[i] = NULL;
 	map->height = line_count;
-	map->width = (map->grid[0]) ? ft_strlen(map->grid[0]) : 0;
+	if (map->grid[0])
+		map->width = ft_strlen(map->grid[0]);
+	else
+		map->width = 0;
 	return (1);
 }
 
 /*
 **	check_map_elements:
+**	scan all elements in the map and count them
+**	check if the map contains invalid characters
+**	check if the map contains exactly one player (P)
+**	check if the map contains at least one collectible (C)
+**	check if the map contains exactly one exit (E)
+**	return 1 on success, 0 on failure
 */
-
 int	check_map_elements(t_map *map)
 {
 	scan_map_elements(map);
@@ -109,24 +114,35 @@ int	check_map_elements(t_map *map)
 	if (map->c_count < 1)
 		return (error_message("elem: Map must contain at least one 'C'", 0));
 	if (map->e_count != 1)
-		return (error_message("elem: Map must contain at least one 'E'", 0));
+		return (error_message("elem: Map must contain exactly one 'E'", 0));
 	return (1);
 }
 
+/*
+**	check_map_path:
+**	initialize path structure with map data
+**	perform flood fill to mark reachable areas
+**	check if all collectibles and exit are reachable
+**	return 1 if path is valid, 0 otherwise
+*/
 int	check_map_path(t_map *map)
 {
 	t_path	path;
 
 	if (!init_path_struct(&path, map))
-	{
-		ft_printf("Errore: Player non trovato nella mappa\n"); // erorr_message
-		return (0);
-	}
+		return (error_message("Error: Player not found in map", 0));
 	flood_fill_mark(path.cp, path.sx, path.sy, path.cnt);
 	free(path.cp);
 	return (check_path_result(&path, map));
 }
 
+/*
+**	check_map_format:
+**	check if map size is valid (at least 3x3)
+**	check if all lines have the same length (rectangular)
+**	check if map borders are all walls ('1')
+**	return 1 on success, exit on failure
+*/
 int	check_map_format(t_map *map, int count)
 {
 	int	i;
@@ -135,8 +151,14 @@ int	check_map_format(t_map *map, int count)
 	if (count < 3 || map->width < 3)
 		error_handler("Map is too small", map);
 	while (++i < count)
+	{
+		if (!map->grid[i])
+			error_handler("Map contains empty line", map);
+		if ((int)ft_strlen(map->grid[i]) == 0)
+			error_handler("Map contains empty line", map);
 		if ((int)ft_strlen(map->grid[i]) != map->width)
 			error_handler("Map is not rectangular", map);
+	}
 	i = -1;
 	while (++i < map->width)
 		if (map->grid[0][i] != '1' || map->grid[count - 1][i] != '1')

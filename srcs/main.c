@@ -6,8 +6,9 @@
 **	Check that av[1] is a .ber file.
 **	Initialize the map with the required elements.
 **	Load the images(init) and draw the map(render)
+**	Setup MLX hooks and start the game loop
+**	return 0 on success
 */
-
 int	main(int ac, char **av)
 {
 	t_data	data;
@@ -19,19 +20,39 @@ int	main(int ac, char **av)
 	if (!init_map(av[1], &data.map))
 	{
 		destroy_win(&data);
-		error_handler("Map loading failed", &data.map); // cambiato 
+		error_handler("Map loading failed", &data.map);
 	}
 	data.ptr = mlx_init();
 	if (!data.ptr)
-		free_map(&data.map), error_message("Failed to initialize MLX", 1);
-	data.win = mlx_new_window(data.ptr, data.map.width * TILE,
-			data.map.height * TILE, "So Long");
-	if (!data.win)
-		free_map(&data.map), error_message("main: Failed to create a new window", 1);
-	init_images(&data);
-	init_player(&data);
-	render_map(&data);
-	mlx_hook(data.win, 2, 1L << 0, keypress, &data);
-	mlx_hook(data.win, 17, 0, destroy_win, &data);
-	mlx_loop(data.ptr);
+	{
+		free_map(&data.map);
+		error_message("Failed to initialize MLX", 1);
+	}
+	init_window_and_game(&data);
+	return (0);
+}
+
+/*
+**	init_window_and_game:
+**	Create the game window with proper dimensions
+**	Initialize images and player data
+**	Render the initial map state
+**	Setup event hooks for keyboard and window close
+**	Start the MLX event loop
+*/
+void	init_window_and_game(t_data *data)
+{
+	data->win = mlx_new_window(data->ptr, data->map.width * TILE,
+			data->map.height * TILE, "So Long");
+	if (!data->win)
+	{
+		free_map(&data->map);
+		error_message("main: Failed to create a new window", 1);
+	}
+	init_images(data);
+	init_player(data);
+	render_map(data);
+	mlx_hook(data->win, 2, 1L << 0, keypress, data);
+	mlx_hook(data->win, 17, 0, destroy_win, data);
+	mlx_loop(data->ptr);
 }
